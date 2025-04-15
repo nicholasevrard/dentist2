@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wordpress-deployment
+  name: dentist2-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: wordpress
+      app: dentist2
   template:
     metadata:
       labels:
-        app: wordpress
+        app: dentist2
     spec:
       containers:
-      - name: wordpress
-        image: nicholasevrard/dentiste:latest # <- nom de l’image sur Docker Hub une fois poussée
-        ports:
-        - containerPort: 80
+        - name: dentist2-container
+          image: nicholasevrard/dentist2:latest
+          ports:
+            - containerPort: 80

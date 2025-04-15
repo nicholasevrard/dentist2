@@ -1,25 +1,35 @@
 pipeline {
     agent any
 
+    triggers {
+        pollSCM('*/1 * * * *') // Vérifie le repo toutes les minutes
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+    }
+
     environment {
-        DOCKER_IMAGE_NAME = 'nicholasevrard/dentiste2'
+        DOCKER_IMAGE_NAME = 'nicholasevrard/dentist2' // nouveau repo Docker Hub ou nom d’image
         IMAGE_TAG = 'latest'
     }
 
     stages {
-        stage('Cloner le dépôt') {
+        stage('Analyse SonarQube') {
             steps {
-                git 'https://github.com/nicholasevrard/dentiste2.git'
+                withSonarQubeEnv('SonarQube') {
+                    sh 'sonar-scanner'
+                }
             }
         }
 
-        stage('Construire l’image Docker') {
+        stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE_NAME:$IMAGE_TAG .'
             }
         }
 
-        stage('Pousser sur Docker Hub') {
+        stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub_credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
@@ -31,22 +41,13 @@ pipeline {
             }
         }
 
-        stage('Déployer sur Kubernetes (Minikube)') {
+        stage('Déploiement Kubernetes') {
             steps {
                 sh '''
                     kubectl apply -f deployment.yml
                     kubectl apply -f service.yml
                 '''
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Déploiement réussi sur Kubernetes !"
-        }
-        failure {
-            echo "Échec du pipeline"
         }
     }
 }
