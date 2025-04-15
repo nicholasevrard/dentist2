@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     triggers {
-        pollSCM('*/1 * * * *') // Vérifie le repo toutes les minutes
+        pollSCM('*/1 * * * *')
     }
 
     options {
@@ -10,7 +10,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE_NAME = 'nicholasevrard/dentist2' // nouveau repo Docker Hub ou nom d’image
+        DOCKER_IMAGE_NAME = 'nicholasevrard/dentist2'
         IMAGE_TAG = 'latest'
     }
 
@@ -23,9 +23,25 @@ pipeline {
             }
         }
 
+        stage('Scan OWASP Dependencies') {
+            steps {
+                sh '''
+                    dependency-check.sh --project "dentist2" --scan . --format "HTML" --out dependency-check-report
+                '''
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE_NAME:$IMAGE_TAG .'
+            }
+        }
+
+        stage('Scan Trivy (Docker Image)') {
+            steps {
+                sh '''
+                    trivy image --exit-code 0 --severity HIGH,CRITICAL $DOCKER_IMAGE_NAME:$IMAGE_TAG
+                '''
             }
         }
 

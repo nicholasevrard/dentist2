@@ -63,3 +63,23 @@ Assurez-vous que Jenkins a accès à votre cluster Kubernetes (Minikube, MicroK8
 ---
 
 Un pipeline DevOps complet de build, test, push, analyse, et déploiement.
+
+---
+
+## Sécurité DevSecOps intégrée
+
+Ce pipeline CI/CD intègre plusieurs outils de sécurité :
+
+- **Trivy** : Scanne les images Docker pour détecter les vulnérabilités connues
+- **OWASP Dependency-Check** : Analyse les dépendances PHP à la recherche de failles connues.
+- **SonarQube** : Analyse statique du code source (qualité, duplication, bugs).
+
+### Résultats disponibles :
+- Les rapports OWASP sont générés dans `dependency-check-report/`.
+- Les logs Trivy s'affichent dans la console Jenkins.
+- Les rapports SonarQube sont consultables depuis l'interface Sonar.
+
+---
+
+![Build Status](http://192.168.8.121:8085/job/dentist2/badge/icon)
+
