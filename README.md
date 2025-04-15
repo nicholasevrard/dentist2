@@ -1,8 +1,8 @@
-## 🚀 Déploiement CI/CD avec Jenkins
+## Déploiement CI/CD avec Jenkins
 
-### 📁 Structure du dépôt
+### Structure du dépôt
 
-Créez un dépôt Git propre (ou utilisez ce dépôt : [https://github.com/nicholasevrard/dentiste](https://github.com/nicholasevrard/dentiste)) et placez-y les fichiers suivants :
+Créez un dépôt Git et placez-y les fichiers suivants :
 
 - `Dockerfile` : Fichier pour construire l’image Docker avec WordPress personnalisé.
 - `deployment.yml` : Fichier Kubernetes pour déployer l’application.
@@ -11,7 +11,7 @@ Créez un dépôt Git propre (ou utilisez ce dépôt : [https://github.com/nicho
 
 ---
 
-### 🔐 Configuration de Jenkins
+### Configuration de Jenkins
 
 1. **Créer une credential Docker Hub dans Jenkins :**
    - Aller dans : `Jenkins > Manage Jenkins > Credentials`
@@ -30,7 +30,7 @@ Créez un dépôt Git propre (ou utilisez ce dépôt : [https://github.com/nicho
 
 ---
 
-### ⚙️ Accès à Kubernetes (kubectl)
+### Accès à Kubernetes (kubectl)
 
 Assurez-vous que Jenkins a accès à votre cluster Kubernetes (Minikube, MicroK8s, etc.) :
 
