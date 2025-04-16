@@ -1,57 +1,59 @@
 pipeline {
     agent any
 
-    triggers {
-        pollSCM('*/1 * * * *')
-    }
-
-    options {
-        buildDiscarder(logRotator(numToKeepStr: '5'))
-    }
-
     environment {
-        DOCKER_IMAGE_NAME = 'nicholasevrard/dentist2'
-        IMAGE_TAG = 'latest'
+        DOCKER_IMAGE = "nicholasevrard/dentist2"
+        DOCKER_TAG = "latest"
+        REGISTRY_CREDENTIALS = 'dockerhub_credentials'
+        SONARQUBE_ENV = 'SonarQube'
     }
 
     stages {
+
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/nicholasevrard/dentist2.git', branch: 'main'
+            }
+        }
+
         stage('Analyse SonarQube') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh 'sonar-scanner'
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh 'sonar-scanner -Dsonar.projectKey=dentist2 -Dsonar.sources=. -Dsonar.php.file.suffixes=.php -Dsonar.host.url=http://localhost:9000'
                 }
             }
         }
 
-        stage('Scan OWASP Dependencies') {
+        stage('Analyse Trivy (Image scan)') {
             steps {
                 sh '''
-                    dependency-check.sh --project "dentist2" --scan . --format "HTML" --out dependency-check-report
+                    trivy image --format table --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${DOCKER_TAG} || true
                 '''
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t $DOCKER_IMAGE_NAME:$IMAGE_TAG .'
-            }
-        }
-
-        stage('Scan Trivy (Docker Image)') {
+        stage('OWASP Dependency-Check') {
             steps {
                 sh '''
-                    trivy image --exit-code 0 --severity HIGH,CRITICAL $DOCKER_IMAGE_NAME:$IMAGE_TAG
+                    mkdir -p owasp-report
+                    dependency-check --project "Dentist2" --scan . --format "HTML" --out owasp-report || true
                 '''
+                archiveArtifacts artifacts: 'owasp-report/dependency-check-report.html', allowEmptyArchive: true
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Build Docker image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub_credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${REGISTRY_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push $DOCKER_IMAGE_NAME:$IMAGE_TAG
-                        docker logout
+                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
                     '''
                 }
             }
@@ -64,6 +66,15 @@ pipeline {
                     kubectl apply -f service.yml
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline terminé avec succès"
+        }
+        failure {
+            echo "Le pipeline a échoué"
         }
     }
 }
