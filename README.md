@@ -83,3 +83,35 @@ Ce pipeline CI/CD intègre plusieurs outils de sécurité :
 
 ![Build Status](http://192.168.8.121:8085/job/dentist2/badge/icon)
 
+## 🚀 Pipeline CI/CD avec Jenkins
+
+Ce projet utilise un pipeline automatisé avec **Jenkins** pour effectuer l'intégration et le déploiement continus (CI/CD) de l'application WordPress personnalisée. Le pipeline est défini dans un fichier `Jenkinsfile` et inclut plusieurs étapes pour garantir la qualité, la sécurité et la livraison fluide de l'application dans un cluster Kubernetes.
+
+### 🔧 Étapes du pipeline :
+
+| Étape                    | Description |
+|--------------------------|-------------|
+| **Checkout**           | Clonage du dépôt GitHub contenant le Dockerfile, Jenkinsfile et les fichiers Kubernetes (`deployment.yml`, `service.yml`). |
+| **Analyse SonarQube** | Utilise SonarQube pour analyser le code PHP et détecter les bugs, les vulnérabilités, la dette technique et les mauvaises pratiques. |
+| **Scan Trivy**        | Lance un scan de sécurité avec **Trivy** pour analyser l’image Docker générée et détecter les vulnérabilités connues (CVEs). |
+| **Scan OWASP (ZAP)**  | Effectue un test de pénétration automatisé avec **OWASP ZAP** pour identifier les failles de sécurité potentielles dans l'application Web. |
+| **Build Docker Image**| Crée une image Docker personnalisée à partir du Dockerfile. |
+| **Push Docker Image** | Pousse l’image sur Docker Hub à l’aide d’une credential sécurisée (`dockerhub_credentials`). |
+| **Déploiement K8s**    | Déploie l’application dans le cluster Kubernetes (via `deployment.yml` et `service.yml`). |
+
+### Prérequis Jenkins :
+
+- Une **credential Docker Hub** dans Jenkins :
+  - **ID** : `dockerhub_credentials`
+  - **Type** : Username and password
+
+- Jenkins doit avoir accès à :
+  - Docker (`/var/run/docker.sock`)
+  - Kubernetes (`~/.kube/config`)
+  - SonarQube via l'URL et le token
+  - Trivy (installé sur la VM ou dans l'image Jenkins)
+  - OWASP ZAP (installé ou conteneurisé)
+
+---
+
+Ce pipeline garantit que **chaque modification dans le code déclenche automatiquement une série de tests de qualité et de sécurité**, suivis du déploiement dans un environnement Kubernetes. Cela assure une livraison continue fiable et conforme aux bonnes pratiques DevSecOps.
